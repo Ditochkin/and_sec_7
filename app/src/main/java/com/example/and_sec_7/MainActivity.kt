@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.Month
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 lateinit var g_mainActivity : MainActivity
 lateinit var g_healthConnectClient : HealthConnectClient
@@ -42,6 +43,8 @@ class MainActivity : ComponentActivity() {
             HealthPermission.getReadPermission(StepsRecord::class),
             HealthPermission.getWritePermission(StepsRecord::class)
         )
+
+    var steptsItems = ""
 
     // Create the permissions launcher
     val requestPermissionActivityContract = PermissionController.createRequestPermissionResultContract()
@@ -99,19 +102,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
-
     }
 
     fun readStepsByTimeRange(
         healthConnectClient: HealthConnectClient,
         startTime: Instant,
         endTime: Instant,
-        onStepCountUpdated: (Int) -> Unit
+        onStepCountUpdated: (Int, String) -> Unit
     ) {
         lifecycleScope.launch {
             readStepsByTimeRangeThread(healthConnectClient, startTime, endTime)
-            onStepCountUpdated(g_numSteps)
+            onStepCountUpdated(g_numSteps, steptsItems)
         }
     }
 
@@ -132,18 +133,36 @@ class MainActivity : ComponentActivity() {
                 )
             println(response.records.count())
             g_numSteps = 0
+            steptsItems = ""
             for (stepRecord in response.records) {
                 // Process each step record
+                steptsItems += "Timestamp: (${stepRecord.startTime} - ${stepRecord.endTime}): ${stepRecord.count}\n"
                 println("Step Count: ${stepRecord.count}, Timestamp: ${stepRecord.endTime}")
                 g_numSteps += stepRecord.count.toInt()
-            }
-
-            runOnUiThread{
-
             }
         } catch (e: Exception) {
             // Run error handling here.
             println("Run error handling here.")
+        }
+    }
+
+    fun insertStepsThread(startTime: Instant, endTime: Instant, steps : Long){
+        lifecycleScope.launch {
+            insertSteps(g_healthConnectClient, startTime, endTime, steps)
+        }
+    }
+    suspend fun insertSteps(healthConnectClient: HealthConnectClient, startTime: Instant, endTime: Instant, steps : Long) {
+        try {
+            val stepsRecord = StepsRecord(
+                count = steps,
+                startTime = startTime,
+                endTime = endTime,
+                startZoneOffset = ZoneOffset.MAX,
+                endZoneOffset = ZoneOffset.MAX,
+            )
+            healthConnectClient.insertRecords(listOf(stepsRecord))
+        } catch (e: Exception) {
+            // Run error handling here
         }
     }
 }

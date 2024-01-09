@@ -1,8 +1,7 @@
+package com.example.and_sec_7.ui.Screens.StepInfo
+
 import android.app.Application
 import androidx.health.connect.client.HealthConnectClient
-import androidx.health.connect.client.records.StepsRecord
-import androidx.health.connect.client.request.ReadRecordsRequest
-import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.lifecycle.AndroidViewModel
 import com.example.and_sec_7.g_mainActivity
 import java.time.Instant
@@ -47,7 +46,7 @@ class StepsInfoViewModel(app: Application): AndroidViewModel(app) {
         healthConnectClient: HealthConnectClient,
         startTime: Instant,
         endTime: Instant,
-        onStepCountUpdated: (Int) -> Unit
+        onStepCountUpdated: (Int, String) -> Unit
     )
     {
         g_mainActivity.readStepsByTimeRange(healthConnectClient, startTime, endTime, onStepCountUpdated)
